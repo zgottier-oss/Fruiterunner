@@ -1,0 +1,110 @@
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// Spieler (Korb)
+let basket = {
+  x: canvas.width / 2,
+  y: canvas.height - 80,
+  width: 120,
+  height: 20,
+  speed: 10
+};
+
+// Früchte
+let fruits = [];
+let score = 0;
+let lives = 3;
+
+// Steuerung
+let keys = {};
+document.addEventListener("keydown", e => keys[e.code] = true);
+document.addEventListener("keyup", e => keys[e.code] = false);
+
+// Frucht erstellen
+function spawnFruit() {
+  fruits.push({
+    x: Math.random() * canvas.width,
+    y: -20,
+    size: 20 + Math.random() * 20,
+    speed: 2 + Math.random() * 3
+  });
+}
+
+setInterval(spawnFruit, 800);
+
+// Bewegung
+function update() {
+  // Korb bewegen
+  if (keys["ArrowLeft"]) basket.x -= basket.speed;
+  if (keys["ArrowRight"]) basket.x += basket.speed;
+
+  // Grenzen
+  if (basket.x < 0) basket.x = 0;
+  if (basket.x + basket.width > canvas.width)
+    basket.x = canvas.width - basket.width;
+
+  // Früchte bewegen
+  for (let i = 0; i < fruits.length; i++) {
+    let f = fruits[i];
+    f.y += f.speed;
+
+    // Kollision (fangen)
+    if (
+      f.y + f.size > basket.y &&
+      f.x > basket.x &&
+      f.x < basket.x + basket.width
+    ) {
+      score++;
+      fruits.splice(i, 1);
+      i--;
+      continue;
+    }
+
+    // Boden erreicht
+    if (f.y > canvas.height) {
+      fruits.splice(i, 1);
+      i--;
+      lives--;
+
+      if (lives <= 0) {
+        alert("Game Over! Score: " + score);
+        location.reload();
+      }
+    }
+  }
+}
+
+// Zeichnen
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Korb
+  ctx.fillStyle = "white";
+  ctx.fillRect(basket.x, basket.y, basket.width, basket.height);
+
+  // Früchte
+  ctx.fillStyle = "orange";
+  fruits.forEach(f => {
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.size / 2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Punkte
+  ctx.fillStyle = "white";
+  ctx.font = "20px Arial";
+  ctx.fillText("Score: " + score, 20, 30);
+  ctx.fillText("Lives: " + lives, 20, 60);
+}
+
+// Game Loop
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
